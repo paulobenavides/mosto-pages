@@ -1,0 +1,1023 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MOSTO — Degollado, Jalisco</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Sora:wght@200;300;400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+/* ══════════════════════════════════════
+   MOSTO — Cantera Interactive Homepage
+   ══════════════════════════════════════ */
+
+:root {
+  --bg: #0C0A08;
+  --bg-warm: #141210;
+  --stone: #A89B8C;
+  --stone-light: #C8BDB0;
+  --stone-dark: #6B6159;
+  --cream: #F0EBE3;
+  --gold: #C9A84C;
+  --copper: #D48A6A;
+  --white: #F7F5F0;
+  --dim: #3A3632;
+  --metal: #D4D0C8;
+  --metal-shine: #ECEAE5;
+  --f1: 'Sora', sans-serif;
+  --f2: 'Cormorant Garamond', serif;
+  --ease: cubic-bezier(0.33, 0, 0.2, 1);
+  --ease-out: cubic-bezier(0.19, 1, 0.22, 1);
+}
+
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { overflow: hidden; height: 100%; }
+body {
+  font-family: var(--f1);
+  background: var(--bg);
+  color: var(--white);
+  overflow: hidden;
+  height: 100%;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  cursor: default;
+}
+
+/* Noise texture overlay */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  opacity: 0.03;
+  pointer-events: none;
+  z-index: 10000;
+  background: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ── LOADING ── */
+.loader {
+  position: fixed; inset: 0; z-index: 9999;
+  background: var(--bg);
+  display: flex; align-items: center; justify-content: center;
+  transition: opacity 0.8s var(--ease), visibility 0.8s;
+}
+.loader.done { opacity: 0; visibility: hidden; pointer-events: none; }
+.loader-bar {
+  width: 120px; height: 1px; background: var(--dim); position: relative; overflow: hidden;
+}
+.loader-bar::after {
+  content: ''; position: absolute; left: 0; top: 0; height: 100%;
+  width: 0; background: var(--stone);
+  animation: load 1.5s var(--ease) forwards;
+}
+@keyframes load { to { width: 100%; } }
+
+/* ── AMBIENT BACKGROUND ── */
+.ambient {
+  position: fixed; inset: 0; z-index: 0;
+  background: radial-gradient(ellipse 80% 60% at 50% 45%, #1E1A16 0%, var(--bg) 100%);
+  transition: opacity 0.8s;
+}
+.ambient-light {
+  position: absolute; width: 600px; height: 600px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(201,168,76,0.06) 0%, transparent 70%);
+  top: 20%; left: 50%; transform: translate(-50%, -50%);
+  animation: ambientDrift 12s ease-in-out infinite alternate;
+  pointer-events: none;
+}
+@keyframes ambientDrift {
+  0% { transform: translate(-50%, -50%) scale(1); opacity: 0.6; }
+  100% { transform: translate(-45%, -48%) scale(1.15); opacity: 1; }
+}
+
+/* ── DUST PARTICLES ── */
+.particles {
+  position: fixed; inset: 0; z-index: 3; pointer-events: none;
+  opacity: 0; transition: opacity 1.5s;
+}
+.particles.active { opacity: 1; }
+.particle {
+  position: absolute; width: 2px; height: 2px;
+  background: var(--stone); border-radius: 50%;
+  opacity: 0;
+}
+
+/* ── HERO STATE ── */
+.hero-layer {
+  position: fixed; inset: 0; z-index: 2;
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  text-align: center;
+  transition: opacity 0.6s;
+}
+
+.hero-brand {
+  font-size: clamp(0.6rem, 1vw, 0.75rem);
+  font-weight: 700;
+  letter-spacing: 0.6em;
+  text-transform: uppercase;
+  color: var(--stone);
+  opacity: 0;
+  animation: fadeUp 1s 0.3s var(--ease) forwards;
+  margin-bottom: 32px;
+}
+
+.hero-title {
+  font-size: clamp(3.5rem, 10vw, 8rem);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 0.85;
+  color: var(--white);
+  opacity: 0;
+  animation: fadeUp 1s 0.6s var(--ease) forwards;
+}
+
+.hero-location {
+  font-family: var(--f2);
+  font-size: clamp(0.9rem, 1.4vw, 1.15rem);
+  font-style: italic;
+  color: var(--stone-dark);
+  letter-spacing: 0.08em;
+  margin-top: 12px;
+  opacity: 0;
+  animation: fadeUp 1s 0.9s var(--ease) forwards;
+}
+
+.hero-cta {
+  font-size: 0.52rem;
+  font-weight: 600;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: var(--dim);
+  margin-top: 56px;
+  opacity: 0;
+  animation: fadeUp 1s 1.2s var(--ease) forwards, ctaPulse 3s 2.5s ease-in-out infinite;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+.hero-cta:hover { color: var(--stone); }
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(20px); }
+  to   { opacity: 1; transform: none; }
+}
+@keyframes ctaPulse {
+  0%, 100% { opacity: 0.6; }
+  50% { opacity: 1; }
+}
+
+/* ── CANTERA SCULPTURE ── */
+.sculpture-container {
+  position: fixed; inset: 0; z-index: 1;
+  display: flex; align-items: center; justify-content: center;
+  perspective: 1200px;
+}
+
+.sculpture {
+  position: relative;
+  width: clamp(200px, 28vw, 340px);
+  height: clamp(420px, 60vh, 640px);
+  transform-style: preserve-3d;
+  cursor: pointer;
+  transition: transform 0.6s var(--ease);
+}
+
+.sculpture:hover { transform: scale(1.01); }
+.sculpture.exploded:hover { transform: none; }
+
+/* Each segment of the bottle */
+.seg {
+  position: absolute;
+  left: 0; right: 0;
+  background: linear-gradient(135deg, #8C7E6E 0%, #7A6E5F 30%, #6B6058 60%, #5C5349 100%);
+  border: 1px solid rgba(255,255,255,0.04);
+  transition: all 0.9s var(--ease-out);
+  transform-style: preserve-3d;
+  overflow: hidden;
+  cursor: pointer;
+}
+
+/* Stone texture on segments */
+.seg::before {
+  content: '';
+  position: absolute; inset: 0;
+  background:
+    repeating-linear-gradient(90deg, transparent, transparent 3px, rgba(0,0,0,0.03) 3px, rgba(0,0,0,0.03) 4px),
+    repeating-linear-gradient(0deg, transparent, transparent 5px, rgba(255,255,255,0.02) 5px, rgba(255,255,255,0.02) 6px);
+  pointer-events: none;
+}
+
+/* Light sweep effect */
+.seg::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,0.06) 50%, transparent 70%);
+  opacity: 0;
+  transition: opacity 0.6s;
+  pointer-events: none;
+}
+.seg:hover::after { opacity: 1; }
+
+/* Segment shapes — bottle silhouette carved into 6 pieces */
+.seg-0 { /* Cap/Top */
+  top: 0; height: 10%;
+  border-radius: 8px 8px 0 0;
+  clip-path: polygon(35% 0%, 65% 0%, 62% 100%, 38% 100%);
+  background: linear-gradient(135deg, #9A8C7C 0%, #8C7E6E 50%, #7A6E5F 100%);
+}
+.seg-1 { /* Neck */
+  top: 10%; height: 16%;
+  clip-path: polygon(38% 0%, 62% 0%, 68% 100%, 32% 100%);
+  background: linear-gradient(135deg, #8C7E6E 0%, #7A6E5F 50%, #6B6058 100%);
+}
+.seg-2 { /* Upper shoulder */
+  top: 26%; height: 14%;
+  clip-path: polygon(32% 0%, 68% 0%, 85% 100%, 15% 100%);
+  background: linear-gradient(135deg, #857968 0%, #7A6E5F 50%, #6B6058 100%);
+}
+.seg-3 { /* Upper body */
+  top: 40%; height: 18%;
+  clip-path: polygon(15% 0%, 85% 0%, 88% 100%, 12% 100%);
+  background: linear-gradient(135deg, #7A6E5F 0%, #6B6058 50%, #5C5349 100%);
+}
+.seg-4 { /* Lower body */
+  top: 58%; height: 22%;
+  clip-path: polygon(12% 0%, 88% 0%, 85% 100%, 15% 100%);
+  background: linear-gradient(135deg, #6B6058 0%, #5C5349 50%, #524940 100%);
+}
+.seg-5 { /* Base */
+  top: 80%; height: 20%;
+  border-radius: 0 0 4px 4px;
+  clip-path: polygon(15% 0%, 85% 0%, 90% 70%, 88% 100%, 12% 100%, 10% 70%);
+  background: linear-gradient(135deg, #5C5349 0%, #524940 50%, #4A4238 100%);
+}
+
+/* Geometric line details on stone */
+.seg-line {
+  position: absolute;
+  background: rgba(255,255,255,0.05);
+  pointer-events: none;
+}
+
+/* Metal label on each segment */
+.seg-label {
+  position: absolute;
+  left: 50%; top: 50%;
+  transform: translate(-50%, -50%);
+  font-size: clamp(0.5rem, 0.8vw, 0.65rem);
+  font-weight: 700;
+  letter-spacing: 0.35em;
+  text-transform: uppercase;
+  color: transparent;
+  text-shadow: none;
+  white-space: nowrap;
+  transition: all 0.8s var(--ease-out);
+  pointer-events: none;
+}
+
+/* Exploded state */
+.sculpture.exploded .seg-0 {
+  transform: translate3d(-40px, -60px, 80px) rotateY(-8deg) rotateX(3deg);
+}
+.sculpture.exploded .seg-1 {
+  transform: translate3d(50px, -35px, 60px) rotateY(6deg) rotateZ(1deg);
+}
+.sculpture.exploded .seg-2 {
+  transform: translate3d(-55px, -10px, 100px) rotateY(-10deg) rotateX(-2deg);
+}
+.sculpture.exploded .seg-3 {
+  transform: translate3d(45px, 15px, 70px) rotateY(8deg) rotateZ(-1deg);
+}
+.sculpture.exploded .seg-4 {
+  transform: translate3d(-50px, 40px, 90px) rotateY(-7deg) rotateX(2deg);
+}
+.sculpture.exploded .seg-5 {
+  transform: translate3d(40px, 65px, 60px) rotateY(5deg) rotateZ(1deg);
+}
+
+/* Exploded segment glow */
+.sculpture.exploded .seg {
+  box-shadow: 0 8px 40px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.06);
+  border-color: rgba(255,255,255,0.06);
+}
+
+/* Labels visible on explode */
+.sculpture.exploded .seg-label {
+  color: var(--metal);
+  text-shadow:
+    0 0 1px rgba(212,208,200,0.4),
+    0 1px 2px rgba(0,0,0,0.6),
+    0 0 20px rgba(212,208,200,0.08);
+}
+
+/* Segment hover in exploded state */
+.sculpture.exploded .seg:hover {
+  transform: translate3d(0, 0, 140px) rotateY(0deg) !important;
+  box-shadow: 0 16px 60px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1);
+  z-index: 10;
+}
+.sculpture.exploded .seg:hover .seg-label {
+  color: var(--metal-shine);
+  text-shadow:
+    0 0 2px rgba(236,234,229,0.6),
+    0 1px 3px rgba(0,0,0,0.8),
+    0 0 30px rgba(236,234,229,0.12);
+}
+
+/* Active segment (clicked) */
+.sculpture.exploded .seg.active {
+  transform: translate3d(0, 0, 160px) rotateY(0deg) !important;
+  box-shadow: 0 20px 80px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.12);
+  z-index: 20;
+}
+
+/* Dim non-active segments */
+.sculpture.has-active .seg:not(.active) {
+  opacity: 0.35;
+  filter: blur(1px);
+  transition: all 0.6s var(--ease);
+}
+
+/* ── CONTENT PANEL ── */
+.content-panel {
+  position: fixed;
+  z-index: 5;
+  right: 6vw;
+  top: 50%;
+  transform: translateY(-50%) translateX(40px);
+  width: clamp(320px, 32vw, 480px);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: all 0.7s var(--ease-out);
+}
+.content-panel.visible {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translateY(-50%) translateX(0);
+}
+
+.panel-glass {
+  background: rgba(20, 18, 16, 0.85);
+  backdrop-filter: blur(40px);
+  -webkit-backdrop-filter: blur(40px);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 16px;
+  padding: clamp(28px, 4vw, 48px);
+  position: relative;
+  overflow: hidden;
+}
+.panel-glass::before {
+  content: '';
+  position: absolute; top: 0; left: 0; right: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+}
+
+.panel-label {
+  font-size: 0.5rem;
+  font-weight: 700;
+  letter-spacing: 0.5em;
+  text-transform: uppercase;
+  color: var(--copper);
+  margin-bottom: 16px;
+}
+
+.panel-title {
+  font-family: var(--f2);
+  font-size: clamp(1.8rem, 3vw, 2.6rem);
+  font-weight: 300;
+  font-style: italic;
+  color: var(--white);
+  line-height: 1.15;
+  margin-bottom: 24px;
+}
+
+.panel-points {
+  list-style: none;
+  margin-bottom: 28px;
+}
+.panel-points li {
+  font-size: 0.78rem;
+  line-height: 1.8;
+  color: var(--stone);
+  padding-left: 16px;
+  position: relative;
+  margin-bottom: 6px;
+}
+.panel-points li::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 10px;
+  width: 4px; height: 4px;
+  background: var(--copper);
+  border-radius: 50%;
+}
+
+.panel-cta {
+  display: inline-block;
+  padding: 14px 36px;
+  font-size: 0.6rem;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--bg);
+  background: var(--white);
+  border: none;
+  cursor: pointer;
+  transition: all 0.3s var(--ease);
+}
+.panel-cta:hover {
+  background: var(--copper);
+  color: var(--white);
+}
+
+.panel-image {
+  margin-top: 24px;
+  border-radius: 8px;
+  overflow: hidden;
+  aspect-ratio: 16/9;
+  background: var(--dim);
+  position: relative;
+}
+.panel-image-inner {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  opacity: 0.7;
+}
+
+/* Close button */
+.panel-close {
+  position: absolute;
+  top: 16px; right: 16px;
+  width: 32px; height: 32px;
+  background: none; border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 50%;
+  color: var(--stone-dark);
+  font-size: 0.7rem;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s;
+  z-index: 2;
+}
+.panel-close:hover { border-color: var(--stone); color: var(--white); }
+
+/* ── BACK BUTTON ── */
+.back-btn {
+  position: fixed;
+  top: 32px; left: 32px;
+  z-index: 100;
+  font-size: 0.52rem;
+  font-weight: 600;
+  letter-spacing: 0.25em;
+  text-transform: uppercase;
+  color: var(--dim);
+  background: none; border: none;
+  cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.5s var(--ease);
+  display: flex; align-items: center; gap: 8px;
+}
+.back-btn.visible { opacity: 1; visibility: visible; }
+.back-btn:hover { color: var(--stone); }
+.back-btn svg { width: 14px; transition: transform 0.3s; }
+.back-btn:hover svg { transform: translateX(-3px); }
+
+/* ── BOTTOM NAV (exploded state) ── */
+.bottom-nav {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  z-index: 100;
+  padding: 0 clamp(20px, 4vw, 52px) 28px;
+  display: flex; justify-content: center; gap: clamp(12px, 3vw, 32px);
+  opacity: 0; visibility: hidden;
+  transition: all 0.6s var(--ease);
+  pointer-events: none;
+}
+.bottom-nav.visible { opacity: 1; visibility: visible; pointer-events: auto; }
+.bottom-nav-item {
+  font-size: 0.5rem;
+  font-weight: 600;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--dim);
+  background: none; border: none;
+  cursor: pointer;
+  padding: 8px 4px;
+  position: relative;
+  transition: color 0.3s;
+}
+.bottom-nav-item:hover { color: var(--stone); }
+.bottom-nav-item.active { color: var(--copper); }
+.bottom-nav-item::after {
+  content: '';
+  position: absolute; bottom: 0; left: 0; right: 0;
+  height: 1px; background: var(--copper);
+  transform: scaleX(0); transition: transform 0.3s var(--ease);
+}
+.bottom-nav-item.active::after { transform: scaleX(1); }
+
+/* ── REDUCED MOTION ── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.1s !important;
+  }
+  .ambient-light { animation: none; }
+  .particle { display: none; }
+}
+
+/* ── MOBILE ── */
+@media (max-width: 768px) {
+  html { overflow-y: auto; overflow-x: hidden; }
+  body { overflow-y: auto; overflow-x: hidden; }
+
+  .sculpture-container {
+    position: relative;
+    height: 70vh;
+    min-height: 420px;
+  }
+
+  .sculpture {
+    width: 55vw;
+    max-width: 240px;
+    height: 55vh;
+    max-height: 480px;
+  }
+
+  .hero-layer {
+    position: relative;
+    min-height: 30vh;
+    padding: 60px 20px 20px;
+    z-index: 2;
+  }
+
+  .hero-title { font-size: clamp(2.8rem, 12vw, 4rem); }
+  .hero-cta { margin-top: 32px; }
+
+  /* Mobile explosion — tighter spread */
+  .sculpture.exploded .seg-0 { transform: translate3d(-20px, -30px, 40px) rotateY(-5deg); }
+  .sculpture.exploded .seg-1 { transform: translate3d(25px, -18px, 30px) rotateY(4deg); }
+  .sculpture.exploded .seg-2 { transform: translate3d(-28px, -5px, 50px) rotateY(-6deg); }
+  .sculpture.exploded .seg-3 { transform: translate3d(22px, 8px, 35px) rotateY(5deg); }
+  .sculpture.exploded .seg-4 { transform: translate3d(-25px, 20px, 45px) rotateY(-4deg); }
+  .sculpture.exploded .seg-5 { transform: translate3d(20px, 32px, 30px) rotateY(3deg); }
+
+  .sculpture.exploded .seg:hover {
+    transform: translate3d(0, 0, 70px) rotateY(0deg) !important;
+  }
+
+  /* Mobile content panel */
+  .content-panel {
+    position: relative;
+    right: auto; top: auto;
+    transform: none;
+    width: 100%;
+    padding: 0 20px;
+    margin-top: 20px;
+    margin-bottom: 40px;
+    opacity: 0;
+    max-height: 0;
+    overflow: hidden;
+    visibility: hidden;
+    transition: all 0.6s var(--ease-out);
+  }
+  .content-panel.visible {
+    opacity: 1;
+    max-height: 800px;
+    visibility: visible;
+    transform: none;
+  }
+
+  .panel-glass { border-radius: 12px; padding: 24px; }
+
+  .bottom-nav {
+    position: sticky;
+    bottom: 0;
+    background: rgba(12, 10, 8, 0.95);
+    backdrop-filter: blur(12px);
+    padding: 12px 16px;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  .bottom-nav-item {
+    font-size: 0.42rem;
+    letter-spacing: 0.2em;
+    padding: 6px 8px;
+  }
+
+  .back-btn { top: 16px; left: 16px; }
+}
+
+@media (max-width: 480px) {
+  .sculpture { width: 60vw; height: 50vh; }
+  .bottom-nav-item { font-size: 0.4rem; letter-spacing: 0.15em; }
+}
+</style>
+</head>
+<body>
+
+<!-- Loader -->
+<div class="loader" id="loader">
+  <div class="loader-bar"></div>
+</div>
+
+<!-- Ambient background -->
+<div class="ambient">
+  <div class="ambient-light"></div>
+</div>
+
+<!-- Dust particles -->
+<div class="particles" id="particles"></div>
+
+<!-- Hero text layer -->
+<div class="hero-layer" id="heroLayer">
+  <div class="hero-brand">Tequila Artesanal</div>
+  <h1 class="hero-title">MOSTO</h1>
+  <p class="hero-location">Degollado, Jalisco</p>
+  <div class="hero-cta" id="heroCta">Enter the Bottle</div>
+</div>
+
+<!-- Cantera sculpture -->
+<div class="sculpture-container" id="sculptureContainer">
+  <div class="sculpture" id="sculpture">
+    <div class="seg seg-0" data-index="0">
+      <div class="seg-label">PROCESS</div>
+    </div>
+    <div class="seg seg-1" data-index="1">
+      <div class="seg-label">AGAVE</div>
+    </div>
+    <div class="seg seg-2" data-index="2">
+      <div class="seg-label">CRAFT</div>
+    </div>
+    <div class="seg seg-3" data-index="3">
+      <div class="seg-label">FLAVOR</div>
+    </div>
+    <div class="seg seg-4" data-index="4">
+      <div class="seg-label">COCKTAILS</div>
+    </div>
+    <div class="seg seg-5" data-index="5">
+      <div class="seg-label">BUY</div>
+    </div>
+  </div>
+</div>
+
+<!-- Back button -->
+<button class="back-btn" id="backBtn">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+    <path d="M19 12H5m0 0l7 7m-7-7l7-7"/>
+  </svg>
+  RESET
+</button>
+
+<!-- Bottom navigation -->
+<div class="bottom-nav" id="bottomNav"></div>
+
+<!-- Content panel -->
+<div class="content-panel" id="contentPanel">
+  <div class="panel-glass">
+    <button class="panel-close" id="panelClose">&times;</button>
+    <div class="panel-label" id="panelLabel"></div>
+    <h2 class="panel-title" id="panelTitle"></h2>
+    <ul class="panel-points" id="panelPoints"></ul>
+    <button class="panel-cta" id="panelCta"></button>
+    <div class="panel-image" id="panelImage">
+      <div class="panel-image-inner" id="panelImageInner"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ══════════════════════════════════════
+   MOSTO — Interactive Engine
+   ══════════════════════════════════════ */
+
+// Editable content JSON
+const CONTENT = [
+  {
+    key: "PROCESS",
+    label: "The Process",
+    title: "Slow-Cooked Tradition",
+    points: [
+      "72-hour stone oven roast of hand-selected piñas",
+      "Natural fermentation in open-air wooden vats",
+      "Double distilled in small-batch copper pot stills",
+      "Rested in climate-controlled underground cellars"
+    ],
+    cta: "Explore Process",
+    imageGradient: "linear-gradient(135deg, #2C1810 0%, #1A0F0A 100%)"
+  },
+  {
+    key: "AGAVE",
+    label: "The Agave",
+    title: "Blue Weber, Los Altos",
+    points: [
+      "Estate-grown Agave Tequilana Weber Azul",
+      "Harvested at peak maturity — 7 to 9 years minimum",
+      "Rich red clay terroir of the highlands",
+      "Hand-selected by third-generation jimadores"
+    ],
+    cta: "See the Fields",
+    imageGradient: "linear-gradient(135deg, #1E3A1C 0%, #0F1F0E 100%)"
+  },
+  {
+    key: "CRAFT",
+    label: "The Craft",
+    title: "Architecture in a Bottle",
+    points: [
+      "Cantera stone sculpture carved by local artisans",
+      "Each bottle is a one-of-a-kind architectural piece",
+      "Inspired by Jalisco hacienda heritage",
+      "Handcrafted stainless steel detailing"
+    ],
+    cta: "Discover Craft",
+    imageGradient: "linear-gradient(135deg, #2A2520 0%, #141210 100%)"
+  },
+  {
+    key: "FLAVOR",
+    label: "The Flavor",
+    title: "Refined & Unmistakable",
+    points: [
+      "Cooked agave sweetness with citrus undertones",
+      "Warm vanilla and roasted oak on the palate",
+      "Long finish of white pepper and mineral earth",
+      "No additives — certified 100% agave"
+    ],
+    cta: "Tasting Notes",
+    imageGradient: "linear-gradient(135deg, #3A2510 0%, #1A1208 100%)"
+  },
+  {
+    key: "COCKTAILS",
+    label: "Cocktails",
+    title: "Made for the Moment",
+    points: [
+      "The Mosto Paloma — grapefruit, salt, ritual",
+      "Cantera Old Fashioned — smoke and heritage",
+      "Jalisco Mule — copper cup, copper soul",
+      "Best served neat with a story to tell"
+    ],
+    cta: "View Recipes",
+    imageGradient: "linear-gradient(135deg, #1A2030 0%, #0C1018 100%)"
+  },
+  {
+    key: "BUY",
+    label: "Acquire",
+    title: "Own a Piece of Jalisco",
+    points: [
+      "Limited production — numbered bottles",
+      "Direct from Degollado, Jalisco to your door",
+      "Custom engraving available for select editions",
+      "Collector packaging in reclaimed cantera stone"
+    ],
+    cta: "Shop Now",
+    imageGradient: "linear-gradient(135deg, #2C1A2A 0%, #140E14 100%)"
+  }
+];
+
+// State
+let isExploded = false;
+let activeSegment = null;
+const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// DOM refs
+const loader      = document.getElementById('loader');
+const heroLayer   = document.getElementById('heroLayer');
+const heroCta     = document.getElementById('heroCta');
+const sculpture   = document.getElementById('sculpture');
+const sculptCont  = document.getElementById('sculptureContainer');
+const particles   = document.getElementById('particles');
+const backBtn     = document.getElementById('backBtn');
+const bottomNav   = document.getElementById('bottomNav');
+const contentPanel= document.getElementById('contentPanel');
+const panelClose  = document.getElementById('panelClose');
+const segments    = document.querySelectorAll('.seg');
+
+// ── Init ──
+window.addEventListener('load', () => {
+  setTimeout(() => loader.classList.add('done'), 1600);
+  buildBottomNav();
+  initParallax();
+  if (!prefersReducedMotion) createParticles();
+});
+
+// ── Build bottom nav ──
+function buildBottomNav() {
+  CONTENT.forEach((item, i) => {
+    const btn = document.createElement('button');
+    btn.className = 'bottom-nav-item';
+    btn.textContent = item.key;
+    btn.dataset.index = i;
+    btn.addEventListener('click', () => showSegmentContent(i));
+    bottomNav.appendChild(btn);
+  });
+}
+
+// ── Parallax on mouse move ──
+function initParallax() {
+  if (prefersReducedMotion) return;
+  document.addEventListener('mousemove', (e) => {
+    const cx = (e.clientX / window.innerWidth - 0.5) * 2;
+    const cy = (e.clientY / window.innerHeight - 0.5) * 2;
+    sculpture.style.transform = isExploded
+      ? `rotateY(${cx * 3}deg) rotateX(${cy * -2}deg)`
+      : `rotateY(${cx * 2}deg) rotateX(${cy * -1.5}deg) scale(${1 + Math.abs(cx) * 0.005})`;
+  });
+}
+
+// ── Particles ──
+function createParticles() {
+  for (let i = 0; i < 30; i++) {
+    const p = document.createElement('div');
+    p.className = 'particle';
+    p.style.left = Math.random() * 100 + '%';
+    p.style.top = Math.random() * 100 + '%';
+    p.style.width = (1 + Math.random() * 2) + 'px';
+    p.style.height = p.style.width;
+    p.style.animationDelay = Math.random() * 4 + 's';
+    particles.appendChild(p);
+  }
+}
+
+function burstParticles() {
+  if (prefersReducedMotion) return;
+  particles.classList.add('active');
+  const pEls = particles.querySelectorAll('.particle');
+  pEls.forEach((p) => {
+    const startX = 45 + Math.random() * 10;
+    const startY = 40 + Math.random() * 20;
+    const endX = startX + (Math.random() - 0.5) * 60;
+    const endY = startY + (Math.random() - 0.5) * 60;
+    p.style.left = startX + '%';
+    p.style.top = startY + '%';
+    p.style.opacity = '0';
+    p.animate([
+      { left: startX + '%', top: startY + '%', opacity: 0 },
+      { opacity: 0.6, offset: 0.2 },
+      { left: endX + '%', top: endY + '%', opacity: 0 }
+    ], {
+      duration: 1500 + Math.random() * 1500,
+      easing: 'cubic-bezier(0.19, 1, 0.22, 1)',
+      delay: Math.random() * 400
+    });
+  });
+  setTimeout(() => particles.classList.remove('active'), 3500);
+}
+
+// ── EXPLODE ──
+function explode() {
+  if (isExploded) return;
+  isExploded = true;
+
+  // Fade hero text
+  heroLayer.style.opacity = '0';
+  heroLayer.style.pointerEvents = 'none';
+
+  // Darken background
+  document.querySelector('.ambient').style.opacity = '0.4';
+
+  // Explode sculpture
+  sculpture.classList.add('exploded');
+
+  // Particles
+  burstParticles();
+
+  // Show navigation
+  setTimeout(() => {
+    backBtn.classList.add('visible');
+    bottomNav.classList.add('visible');
+  }, 600);
+}
+
+// ── COLLAPSE (reset) ──
+function collapse() {
+  isExploded = false;
+  activeSegment = null;
+
+  // Hide panel
+  contentPanel.classList.remove('visible');
+
+  // Reset sculpture
+  sculpture.classList.remove('exploded', 'has-active');
+  segments.forEach(s => s.classList.remove('active'));
+
+  // Show hero
+  heroLayer.style.opacity = '';
+  heroLayer.style.pointerEvents = '';
+
+  // Reset background
+  document.querySelector('.ambient').style.opacity = '';
+
+  // Hide nav
+  backBtn.classList.remove('visible');
+  bottomNav.classList.remove('visible');
+
+  // Reset bottom nav active states
+  document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
+}
+
+// ── Show segment content ──
+function showSegmentContent(index) {
+  const data = CONTENT[index];
+  activeSegment = index;
+
+  // Update active segment visual
+  sculpture.classList.add('has-active');
+  segments.forEach((s, i) => {
+    s.classList.toggle('active', i === index);
+  });
+
+  // Update bottom nav
+  document.querySelectorAll('.bottom-nav-item').forEach((b, i) => {
+    b.classList.toggle('active', i === index);
+  });
+
+  // Populate panel
+  document.getElementById('panelLabel').textContent = data.label;
+  document.getElementById('panelTitle').textContent = data.title;
+
+  const pointsEl = document.getElementById('panelPoints');
+  pointsEl.innerHTML = '';
+  data.points.forEach(pt => {
+    const li = document.createElement('li');
+    li.textContent = pt;
+    pointsEl.appendChild(li);
+  });
+
+  document.getElementById('panelCta').textContent = data.cta;
+  document.getElementById('panelImageInner').style.background = data.imageGradient;
+
+  // Show panel
+  contentPanel.classList.add('visible');
+}
+
+// ── Event Listeners ──
+
+// Click bottle or CTA to explode
+sculpture.addEventListener('click', (e) => {
+  if (!isExploded) {
+    explode();
+    return;
+  }
+  // In exploded state, click on a segment
+  const seg = e.target.closest('.seg');
+  if (seg) {
+    const idx = parseInt(seg.dataset.index);
+    showSegmentContent(idx);
+  }
+});
+
+heroCta.addEventListener('click', explode);
+
+// Back button
+backBtn.addEventListener('click', collapse);
+
+// Panel close
+panelClose.addEventListener('click', () => {
+  contentPanel.classList.remove('visible');
+  sculpture.classList.remove('has-active');
+  segments.forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.bottom-nav-item').forEach(b => b.classList.remove('active'));
+  activeSegment = null;
+});
+
+// Keyboard support
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    if (activeSegment !== null) {
+      panelClose.click();
+    } else if (isExploded) {
+      collapse();
+    }
+  }
+  // Arrow keys to navigate segments when exploded
+  if (isExploded && activeSegment !== null) {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown') {
+      e.preventDefault();
+      showSegmentContent((activeSegment + 1) % CONTENT.length);
+    }
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowUp') {
+      e.preventDefault();
+      showSegmentContent((activeSegment - 1 + CONTENT.length) % CONTENT.length);
+    }
+  }
+});
+
+// Touch support for mobile
+let touchStartY = 0;
+sculpture.addEventListener('touchstart', (e) => {
+  touchStartY = e.touches[0].clientY;
+}, { passive: true });
+
+sculpture.addEventListener('touchend', (e) => {
+  const dy = Math.abs(e.changedTouches[0].clientY - touchStartY);
+  if (dy < 10 && !isExploded) {
+    explode();
+  }
+}, { passive: true });
+</script>
+
+</body>
+</html>
